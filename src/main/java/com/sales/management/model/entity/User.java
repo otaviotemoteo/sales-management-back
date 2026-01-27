@@ -40,6 +40,7 @@ public class User implements UserDetails {
     private UserRole role;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
