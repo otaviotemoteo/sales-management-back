@@ -13,7 +13,9 @@ import com.sales.management.model.enums.SaleStatus;
 import com.sales.management.model.enums.UserRole;
 import com.sales.management.repository.*;
 import com.sales.management.util.Constants;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SaleService {
@@ -34,6 +37,8 @@ public class SaleService {
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public SaleResponse createSale(CreateSaleRequest request) {
@@ -90,6 +95,19 @@ public class SaleService {
         // Salvar
         sale = saleRepository.save(sale);
         
+        // Audit: Log sale creation
+        try {
+            auditLogService.createAuditLog(
+                    "SALE",
+                    sale.getId(),
+                    "CREATE",
+                    null,
+                    objectMapper.writeValueAsString(sale)
+            );
+        } catch (Exception e) {
+            log.error("Error creating audit log for sale creation", e);
+        }
+        
         return mapToResponse(sale);
     }
 
@@ -106,10 +124,29 @@ public class SaleService {
             throw new BusinessException("Apenas vendas pendentes podem ser editadas");
         }
 
-        // Atualizar campos...
-        // (Similar ao createSale, recalculando totais)
-
-        return mapToResponse(saleRepository.save(sale));
+        // Store old value for audit
+        try {
+            String oldValue = objectMapper.writeValueAsString(sale);
+            
+            // Atualizar campos...
+            // (Similar ao createSale, recalculando totais)
+            Sale updatedSale = saleRepository.save(sale);
+            
+            // Audit: Log sale update
+            String newValue = objectMapper.writeValueAsString(updatedSale);
+            auditLogService.createAuditLog(
+                    "SALE",
+                    updatedSale.getId(),
+                    "UPDATE",
+                    oldValue,
+                    newValue
+            );
+            
+            return mapToResponse(updatedSale);
+        } catch (Exception e) {
+            log.error("Error updating sale or creating audit log", e);
+            throw new BusinessException("Erro ao atualizar venda");
+        }
     }
 
     @Transactional
@@ -119,8 +156,22 @@ public class SaleService {
 
         validateSaleAccess(sale);
 
+        SaleStatus previousStatus = sale.getStatus();
         sale.setStatus(SaleStatus.CANCELLED);
         saleRepository.save(sale);
+        
+        // Audit: Log sale cancellation
+        try {
+            auditLogService.createAuditLog(
+                    "SALE",
+                    sale.getId(),
+                    "CANCEL",
+                    previousStatus.toString(),
+                    SaleStatus.CANCELLED.toString()
+            );
+        } catch (Exception e) {
+            log.error("Error creating audit log for sale cancellation", e);
+        }
     }
 
     @Transactional
@@ -131,10 +182,35 @@ public class SaleService {
         validateSaleAccess(sale);
 
         Payment payment = sale.getPayment();
+        PaymentStatus previousStatus = payment.getPaymentStatus();
         payment.setPaymentStatus(PaymentStatus.PAID);
         payment.setPaymentDate(LocalDateTime.now());
 
-        return mapToResponse(saleRepository.save(sale));
+        Sale updatedSale = saleRepository.save(sale);
+        
+        // Audit: Log payment status change
+        try {
+            auditLogService.createAuditLog(
+                    "PAYMENT",
+                    payment.getId(),
+                    "UPDATE",
+                    previousStatus.toString(),
+                    PaymentStatus.PAID.toString()
+            );
+            
+            // Also log sale status change if applicable
+            auditLogService.createAuditLog(
+                    "SALE",
+                    sale.getId(),
+                    "PAYMENT_RECEIVED",
+                    null,
+                    "Payment received at " + payment.getPaymentDate()
+            );
+        } catch (Exception e) {
+            log.error("Error creating audit log for payment status change", e);
+        }
+
+        return mapToResponse(updatedSale);
     }
 
     public SaleResponse getSaleById(Long id) {
