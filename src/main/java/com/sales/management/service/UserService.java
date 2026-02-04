@@ -107,6 +107,11 @@ public class UserService {
                 .map(this::mapToResponse);
     }
 
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(Constants.USER_NOT_FOUND));
+    }
+
     private UserResponse mapToResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
