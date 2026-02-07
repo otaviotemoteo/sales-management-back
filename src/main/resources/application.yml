@@ -3,6 +3,20 @@ spring:
     name: sales-api
   profiles:
     active: ${SPRING_PROFILE:dev}
+  
+  # Redis (ajustei a indentação)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
 
 server:
   port: 8080
@@ -15,3 +29,7 @@ logging:
     com.sales.management: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Cache
+cache:
+  default-ttl: 300 # 5 minutos em segundos
