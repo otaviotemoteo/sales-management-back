@@ -8,6 +8,8 @@ import com.sales.management.model.entity.Product;
 import com.sales.management.repository.ProductRepository;
 import com.sales.management.util.Constants;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponse createProduct(CreateProductRequest request) {
         Product product = Product.builder()
                 .name(request.getName())
@@ -38,6 +41,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.PRODUCT_NOT_FOUND));
@@ -69,6 +73,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.PRODUCT_NOT_FOUND));
@@ -77,6 +82,7 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    @Cacheable(value = "products", key = "#id")
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.PRODUCT_NOT_FOUND));
@@ -98,6 +104,7 @@ public class ProductService {
                 .map(this::mapToResponse);
     }
 
+    @Cacheable(value = "products", key = "'categories'")
     public List<String> getAllCategories() {
         return productRepository.findAllCategories();
     }
