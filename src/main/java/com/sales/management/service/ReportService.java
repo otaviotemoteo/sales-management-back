@@ -5,6 +5,7 @@ import com.sales.management.model.entity.Sale;
 import com.sales.management.model.enums.PaymentStatus;
 import com.sales.management.repository.SaleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public class ReportService {
 
     private final SaleRepository saleRepository;
 
+    @Cacheable(value = "dashboard", key = "#startDate + '_' + #endDate + '_' + #sellerId")
     public DashboardResponse getDashboardMetrics(LocalDateTime startDate, LocalDateTime endDate, Long sellerId) {
         List<Sale> sales;
         
