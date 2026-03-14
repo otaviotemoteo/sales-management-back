@@ -99,14 +99,9 @@ public class SaleService {
         
         // Audit: Log sale creation
         try {
-            auditLogService.createAuditLog(
-                    "SALE",
-                    sale.getId(),
-                    "CREATE",
-                    null,
-                    objectMapper.writeValueAsString(sale)
-            );
-        } catch (Exception e) {
+            String saleJson = objectMapper.writeValueAsString(sale);
+            auditLogService.createAuditLog("SALE", sale.getId(), "CREATE", null, saleJson);
+        } catch (Throwable e) {
             log.error("Error creating audit log for sale creation", e);
         }
         
@@ -127,29 +122,20 @@ public class SaleService {
             throw new BusinessException("Apenas vendas pendentes podem ser editadas");
         }
 
-        // Store old value for audit
+        // Atualizar campos...
+        // (Similar ao createSale, recalculando totais)
+        Sale updatedSale = saleRepository.save(sale);
+
+        // Audit: Log sale update
         try {
             String oldValue = objectMapper.writeValueAsString(sale);
-            
-            // Atualizar campos...
-            // (Similar ao createSale, recalculando totais)
-            Sale updatedSale = saleRepository.save(sale);
-            
-            // Audit: Log sale update
             String newValue = objectMapper.writeValueAsString(updatedSale);
-            auditLogService.createAuditLog(
-                    "SALE",
-                    updatedSale.getId(),
-                    "UPDATE",
-                    oldValue,
-                    newValue
-            );
-            
-            return mapToResponse(updatedSale);
-        } catch (Exception e) {
-            log.error("Error updating sale or creating audit log", e);
-            throw new BusinessException("Erro ao atualizar venda");
+            auditLogService.createAuditLog("SALE", updatedSale.getId(), "UPDATE", oldValue, newValue);
+        } catch (Throwable e) {
+            log.error("Error creating audit log for sale update", e);
         }
+
+        return mapToResponse(updatedSale);
     }
 
     @Transactional
