@@ -19,6 +19,8 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableCaching
@@ -93,8 +95,14 @@ public class RedisConfig {
                 )
                 .disableCachingNullValues(); // Não cacheia valores null
 
+        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+        cacheConfigs.put("products", config.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigs.put("customers", config.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigs.put("dashboard", config.entryTtl(Duration.ofMinutes(2)));
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
+                .withInitialCacheConfigurations(cacheConfigs)
                 .build();
     }
 
