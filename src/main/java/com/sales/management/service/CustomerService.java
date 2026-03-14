@@ -9,6 +9,8 @@ import com.sales.management.model.entity.User;
 import com.sales.management.repository.CustomerRepository;
 import com.sales.management.util.Constants;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -40,6 +42,7 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = "customers", key = "#id")
     public CustomerResponse updateCustomer(Long id, UpdateCustomerRequest request) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.CUSTOMER_NOT_FOUND));
@@ -62,12 +65,14 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = "customers", key = "#id")
     public void deleteCustomer(Long id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.CUSTOMER_NOT_FOUND));
         customerRepository.delete(customer);
     }
 
+    @Cacheable(value = "customers", key = "#id")
     public CustomerResponse getCustomerById(Long id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.CUSTOMER_NOT_FOUND));
