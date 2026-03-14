@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -11,6 +12,40 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sales_user -d sales_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sales-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: sales-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILE: dev
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET:-my-super-secret-key-change-in-production-at-least-256-bits}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
 
 volumes:
   postgres_data:
