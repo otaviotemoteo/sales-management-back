@@ -16,6 +16,7 @@ import com.sales.management.util.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,6 +42,7 @@ public class SaleService {
     private final ObjectMapper objectMapper;
 
     @Transactional
+    @CacheEvict(value = "dashboard", allEntries = true)
     public SaleResponse createSale(CreateSaleRequest request) {
         // Obter usuário logado
         User seller = getCurrentUser();
@@ -112,6 +114,7 @@ public class SaleService {
     }
 
     @Transactional
+    @CacheEvict(value = "dashboard", allEntries = true)
     public SaleResponse updateSale(Long id, UpdateSaleRequest request) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.SALE_NOT_FOUND));
@@ -150,6 +153,7 @@ public class SaleService {
     }
 
     @Transactional
+    @CacheEvict(value = "dashboard", allEntries = true)
     public void cancelSale(Long id) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.SALE_NOT_FOUND));
@@ -175,6 +179,7 @@ public class SaleService {
     }
 
     @Transactional
+    @CacheEvict(value = "dashboard", allEntries = true)
     public SaleResponse markPaymentAsPaid(Long id) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.SALE_NOT_FOUND));
