@@ -1,5 +1,6 @@
 package com.sales.management.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.sales.management.model.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
 public class User implements UserDetails {
 
     @Id
