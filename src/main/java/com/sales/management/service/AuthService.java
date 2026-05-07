@@ -103,6 +103,12 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .active(user.getActive())
+                .phone(user.getPhone())
+                .cpf(user.getCpf())
+                .city(user.getCity())
+                .state(user.getState())
+                .bio(user.getBio())
+                .avatarUrl(user.getAvatarUrl())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
