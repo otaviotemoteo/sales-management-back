@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -38,6 +39,14 @@ public class StartupBanner {
         System.out.printf("  Redis      localhost:%s%n", redisPort);
         System.out.printf("  API        %s%n", base);
         System.out.printf("  Swagger    %s/swagger-ui.html%n", base);
+
+        if (env.acceptsProfiles(Profiles.of("dev"))) {
+            System.out.println();
+            System.out.println(CYAN + "  Demo accounts (dev only)" + RESET);
+            System.out.printf("  Admin      %s / %s%n", DevDataSeeder.ADMIN_EMAIL, DevDataSeeder.ADMIN_PASSWORD);
+            System.out.printf("  Vendedor   %s / %s%n", DevDataSeeder.SELLER_EMAIL, DevDataSeeder.SELLER_PASSWORD);
+        }
+
         System.out.println();
         System.out.println(CYAN + bar + RESET);
         System.out.println();
