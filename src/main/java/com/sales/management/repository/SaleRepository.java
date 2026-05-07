@@ -1,5 +1,6 @@
 package com.sales.management.repository;
 
+import com.sales.management.model.dto.response.SellerStatsResponse;
 import com.sales.management.model.entity.Sale;
 import com.sales.management.model.enums.SaleStatus;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,27 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
            "ORDER BY s.saleDate DESC")
     List<Sale> findCustomerSalesInPeriod(
         @Param("customerId") Long customerId,
+        @Param("startDate") LocalDateTime startDate,
+        @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query("""
+           SELECT new com.sales.management.model.dto.response.SellerStatsResponse(
+               COUNT(s),
+               COALESCE(SUM(s.finalAmount), 0),
+               COUNT(DISTINCT s.customer.id),
+               CASE WHEN COUNT(s) > 0
+                    THEN COALESCE(SUM(s.finalAmount), 0) / COUNT(s)
+                    ELSE 0 END
+           )
+           FROM Sale s
+           WHERE s.seller.id = :sellerId
+             AND s.status <> com.sales.management.model.enums.SaleStatus.CANCELLED
+             AND (:startDate IS NULL OR s.saleDate >= :startDate)
+             AND (:endDate IS NULL OR s.saleDate <= :endDate)
+           """)
+    SellerStatsResponse aggregateForSeller(
+        @Param("sellerId") Long sellerId,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
