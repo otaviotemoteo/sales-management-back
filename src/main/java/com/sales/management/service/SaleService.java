@@ -42,7 +42,7 @@ public class SaleService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    @CacheEvict(value = "dashboard", allEntries = true)
+    @CacheEvict(value = {"dashboard", "sellerStats"}, allEntries = true)
     public SaleResponse createSale(CreateSaleRequest request) {
         // Obter usuário logado
         User seller = getCurrentUser();
@@ -109,7 +109,7 @@ public class SaleService {
     }
 
     @Transactional
-    @CacheEvict(value = "dashboard", allEntries = true)
+    @CacheEvict(value = {"dashboard", "sellerStats"}, allEntries = true)
     public SaleResponse updateSale(Long id, UpdateSaleRequest request) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.SALE_NOT_FOUND));
@@ -139,7 +139,7 @@ public class SaleService {
     }
 
     @Transactional
-    @CacheEvict(value = "dashboard", allEntries = true)
+    @CacheEvict(value = {"dashboard", "sellerStats"}, allEntries = true)
     public void cancelSale(Long id) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.SALE_NOT_FOUND));
@@ -165,7 +165,7 @@ public class SaleService {
     }
 
     @Transactional
-    @CacheEvict(value = "dashboard", allEntries = true)
+    @CacheEvict(value = {"dashboard", "sellerStats"}, allEntries = true)
     public SaleResponse markPaymentAsPaid(Long id) {
         Sale sale = saleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.SALE_NOT_FOUND));
