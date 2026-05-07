@@ -1,8 +1,11 @@
 package com.sales.management.controller;
 
+import com.sales.management.model.dto.request.ChangePasswordRequest;
 import com.sales.management.model.dto.request.CreateUserRequest;
 import com.sales.management.model.dto.request.UpdateUserRequest;
+import com.sales.management.model.dto.response.SellerStatsResponse;
 import com.sales.management.model.dto.response.UserResponse;
+import com.sales.management.model.entity.User;
 import com.sales.management.model.enums.UserRole;
 import com.sales.management.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,10 +17,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/users")
@@ -47,6 +54,31 @@ public class UserController {
         Sort.Direction sortDirection = Sort.Direction.fromString(direction);
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
         return ResponseEntity.ok(userService.getAllUsers(pageable));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Obter perfil do usuário autenticado")
+    public ResponseEntity<UserResponse> getOwnProfile(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(userService.getOwnProfile(currentUser));
+    }
+
+    @PatchMapping("/me")
+    @Operation(summary = "Atualizar perfil do usuário autenticado")
+    public ResponseEntity<UserResponse> updateOwnProfile(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
+        return ResponseEntity.ok(userService.updateOwnProfile(currentUser, request));
+    }
+
+    @PatchMapping("/me/password")
+    @Operation(summary = "Alterar a própria senha")
+    public ResponseEntity<Void> changeOwnPassword(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        userService.changeOwnPassword(currentUser, request);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
@@ -102,5 +134,16 @@ public class UserController {
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(userService.searchUsers(query, pageable));
+    }
+
+    @GetMapping("/{id}/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Métricas agregadas de um vendedor (Admin only)")
+    public ResponseEntity<SellerStatsResponse> getSellerStats(
+            @PathVariable Long id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate
+    ) {
+        return ResponseEntity.ok(userService.getSellerStats(id, startDate, endDate));
     }
 }
