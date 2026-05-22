@@ -34,7 +34,7 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String password;
 
     @Enumerated(EnumType.STRING)
