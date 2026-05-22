@@ -2,6 +2,7 @@ package com.sales.management.controller;
 
 import com.sales.management.model.dto.request.ChangePasswordRequest;
 import com.sales.management.model.dto.request.CreateUserRequest;
+import com.sales.management.model.dto.request.SetPasswordRequest;
 import com.sales.management.model.dto.request.UpdateUserRequest;
 import com.sales.management.model.dto.response.SellerStatsResponse;
 import com.sales.management.model.dto.response.UserResponse;
@@ -78,6 +79,16 @@ public class UserController {
             @Valid @RequestBody ChangePasswordRequest request
     ) {
         userService.changeOwnPassword(currentUser, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/set-password")
+    @Operation(summary = "Definir senha no primeiro acesso")
+    public ResponseEntity<Void> setOwnPassword(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody SetPasswordRequest request
+    ) {
+        userService.setOwnPassword(currentUser, request);
         return ResponseEntity.noContent().build();
     }
 
