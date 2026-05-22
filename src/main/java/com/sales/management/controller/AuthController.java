@@ -33,6 +33,19 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @PostMapping("/check-email")
+    @Operation(summary = "Verificar se o e-mail é um primeiro acesso de vendedor")
+    public ResponseEntity<Map<String, Boolean>> checkEmail(@RequestBody Map<String, String> request) {
+        boolean firstAccess = authService.isFirstAccess(request.get("email"));
+        return ResponseEntity.ok(Map.of("firstAccess", firstAccess));
+    }
+
+    @PostMapping("/first-access")
+    @Operation(summary = "Primeiro acesso de vendedor (sem senha)")
+    public ResponseEntity<AuthResponse> firstAccess(@RequestBody Map<String, String> request) {
+        return ResponseEntity.ok(authService.firstAccess(request.get("email")));
+    }
+
     @PostMapping("/validate")
     @Operation(summary = "Validar token JWT")
     public ResponseEntity<Map<String, Boolean>> validateToken(@RequestBody Map<String, String> request) {
