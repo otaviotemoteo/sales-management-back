@@ -57,7 +57,8 @@ public class SaleService {
         Sale sale = Sale.builder()
                 .seller(seller)
                 .customer(customer)
-                .status(SaleStatus.CONFIRMED)
+                .status(request.getPaymentStatus() == PaymentStatus.PAID
+                        ? SaleStatus.CONFIRMED : SaleStatus.PENDING)
                 .discount(request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO)
                 .notes(request.getNotes())
                 .build();
@@ -72,7 +73,10 @@ public class SaleService {
                     .quantity(itemRequest.getQuantity())
                     .unitPrice(itemRequest.getUnitPrice())
                     .build();
-            
+            item.setTotalPrice(
+                    itemRequest.getUnitPrice()
+                            .multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
+
             sale.addItem(item);
             totalAmount = totalAmount.add(item.getTotalPrice());
         }
@@ -117,13 +121,17 @@ public class SaleService {
         // Validar autorização
         validateSaleAccess(sale);
 
-        // Apenas permitir edição se status for PENDING
-        if (sale.getStatus() != SaleStatus.PENDING) {
-            throw new BusinessException("Apenas vendas pendentes podem ser editadas");
+        // Atualizar campos informados
+        if (request.getStatus() != null) {
+            sale.setStatus(request.getStatus());
+        }
+        if (request.getFinalAmount() != null) {
+            sale.setFinalAmount(request.getFinalAmount());
+        }
+        if (request.getNotes() != null) {
+            sale.setNotes(request.getNotes());
         }
 
-        // Atualizar campos...
-        // (Similar ao createSale, recalculando totais)
         Sale updatedSale = saleRepository.save(sale);
 
         // Audit: Log sale update
@@ -176,6 +184,7 @@ public class SaleService {
         PaymentStatus previousStatus = payment.getPaymentStatus();
         payment.setPaymentStatus(PaymentStatus.PAID);
         payment.setPaymentDate(LocalDateTime.now());
+        sale.setStatus(SaleStatus.CONFIRMED);
 
         Sale updatedSale = saleRepository.save(sale);
         
@@ -252,7 +261,10 @@ public class SaleService {
     }
 
     private SaleResponse mapToResponse(Sale sale) {
-        // Implementar mapping completo
+        User seller = sale.getSeller();
+        Customer customer = sale.getCustomer();
+        Payment payment = sale.getPayment();
+
         return SaleResponse.builder()
                 .id(sale.getId())
                 .saleDate(sale.getSaleDate())
@@ -261,8 +273,60 @@ public class SaleService {
                 .finalAmount(sale.getFinalAmount())
                 .status(sale.getStatus())
                 .notes(sale.getNotes())
-                // ... mapear seller, customer, items, payment
+                .seller(seller == null ? null : UserResponse.builder()
+                        .id(seller.getId())
+                        .name(seller.getName())
+                        .email(seller.getEmail())
+                        .role(seller.getRole())
+                        .active(seller.getActive())
+                        .phone(seller.getPhone())
+                        .cpf(seller.getCpf())
+                        .city(seller.getCity())
+                        .state(seller.getState())
+                        .bio(seller.getBio())
+                        .avatarUrl(seller.getAvatarUrl())
+                        .createdAt(seller.getCreatedAt())
+                        .build())
+                .customer(customer == null ? null : CustomerResponse.builder()
+                        .id(customer.getId())
+                        .name(customer.getName())
+                        .phone(customer.getPhone())
+                        .email(customer.getEmail())
+                        .address(customer.getAddress())
+                        .createdByUsername(customer.getCreatedBy() == null
+                                ? null : customer.getCreatedBy().getUsername())
+                        .createdAt(customer.getCreatedAt())
+                        .updatedAt(customer.getUpdatedAt())
+                        .build())
+                .items(sale.getItems() == null ? List.of() : sale.getItems().stream()
+                        .map(this::mapItemToResponse)
+                        .collect(Collectors.toList()))
+                .paymentMethod(payment == null ? null : payment.getPaymentMethod())
+                .paymentStatus(payment == null ? null : payment.getPaymentStatus())
+                .paymentDate(payment == null ? null : payment.getPaymentDate())
                 .createdAt(sale.getCreatedAt())
+                .build();
+    }
+
+    private SaleItemResponse mapItemToResponse(SaleItem item) {
+        Product product = item.getProduct();
+        return SaleItemResponse.builder()
+                .id(item.getId())
+                .product(product == null ? null : ProductResponse.builder()
+                        .id(product.getId())
+                        .name(product.getName())
+                        .description(product.getDescription())
+                        .price(product.getPrice())
+                        .category(product.getCategory())
+                        .imageUrl(product.getImageUrl())
+                        .active(product.getActive())
+                        .stock(product.getStock())
+                        .createdAt(product.getCreatedAt())
+                        .updatedAt(product.getUpdatedAt())
+                        .build())
+                .quantity(item.getQuantity())
+                .unitPrice(item.getUnitPrice())
+                .totalPrice(item.getTotalPrice())
                 .build();
     }
 }
