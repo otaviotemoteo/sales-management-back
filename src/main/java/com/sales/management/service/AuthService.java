@@ -6,6 +6,7 @@ import com.sales.management.model.dto.request.RegisterRequest;
 import com.sales.management.model.dto.response.AuthResponse;
 import com.sales.management.model.dto.response.UserResponse;
 import com.sales.management.model.entity.User;
+import com.sales.management.model.enums.UserRole;
 import com.sales.management.repository.UserRepository;
 import com.sales.management.security.JwtTokenProvider;
 import com.sales.management.util.Constants;
@@ -77,6 +78,25 @@ public class AuthService {
                 .build();
     }
 
+    public boolean isFirstAccess(String email) {
+        return userRepository.findByEmail(email)
+                .map(u -> u.getRole() == UserRole.SELLER && u.getPassword() == null)
+                .orElse(false);
+    }
+
+    public AuthResponse firstAccess(String email) {
+        User user = userRepository.findByEmail(email)
+                .filter(u -> u.getRole() == UserRole.SELLER && u.getPassword() == null)
+                .orElseThrow(() -> new BadRequestException(Constants.INVALID_CREDENTIALS));
+
+        String token = jwtTokenProvider.generateToken(buildClaims(user), user);
+
+        return AuthResponse.builder()
+                .token(token)
+                .user(mapToUserResponse(user))
+                .build();
+    }
+
     public boolean validateToken(String token) {
         try {
             String email = jwtTokenProvider.extractUsername(token);
@@ -109,6 +129,7 @@ public class AuthService {
                 .state(user.getState())
                 .bio(user.getBio())
                 .avatarUrl(user.getAvatarUrl())
+                .mustSetPassword(user.getPassword() == null)
                 .createdAt(user.getCreatedAt())
                 .build();
     }
