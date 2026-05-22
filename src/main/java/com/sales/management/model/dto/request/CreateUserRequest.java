@@ -25,8 +25,7 @@ public class CreateUserRequest {
     @Size(max = 100, message = "Email deve ter no máximo 100 caracteres")
     private String email;
 
-    @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+    // Optional: sellers are created without a password and set it on first access.
     private String password;
 
     @NotNull(message = "Role é obrigatório")
