@@ -16,6 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -44,7 +47,7 @@ public class AuthService {
         user = userRepository.save(user);
 
         // Gerar token
-        String token = jwtTokenProvider.generateToken(user);
+        String token = jwtTokenProvider.generateToken(buildClaims(user), user);
 
         return AuthResponse.builder()
                 .token(token)
@@ -66,7 +69,7 @@ public class AuthService {
                 .orElseThrow(() -> new BadRequestException(Constants.INVALID_CREDENTIALS));
 
         // Gerar token
-        String token = jwtTokenProvider.generateToken(user);
+        String token = jwtTokenProvider.generateToken(buildClaims(user), user);
 
         return AuthResponse.builder()
                 .token(token)
@@ -85,6 +88,14 @@ public class AuthService {
         }
     }
 
+    private Map<String, Object> buildClaims(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", user.getId());
+        claims.put("role", user.getRole().name());
+        claims.put("name", user.getName());
+        return claims;
+    }
+
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
@@ -92,6 +103,12 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .active(user.getActive())
+                .phone(user.getPhone())
+                .cpf(user.getCpf())
+                .city(user.getCity())
+                .state(user.getState())
+                .bio(user.getBio())
+                .avatarUrl(user.getAvatarUrl())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

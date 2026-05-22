@@ -1,5 +1,6 @@
 package com.sales.management.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.sales.management.model.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
 public class User implements UserDetails {
 
     @Id
@@ -42,6 +44,24 @@ public class User implements UserDetails {
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Column(length = 14, unique = true)
+    private String cpf;
+
+    @Column(length = 100)
+    private String city;
+
+    @Column(length = 2)
+    private String state;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -101,6 +101,7 @@ public class RedisConfig {
         cacheConfigs.put("products", config.entryTtl(Duration.ofMinutes(5)));
         cacheConfigs.put("customers", config.entryTtl(Duration.ofMinutes(10)));
         cacheConfigs.put("dashboard", config.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigs.put("sellerStats", config.entryTtl(Duration.ofMinutes(2)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)

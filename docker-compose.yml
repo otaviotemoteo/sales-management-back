@@ -9,9 +9,11 @@ services:
       POSTGRES_USER: sales_user
       POSTGRES_PASSWORD: sales_pass
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sales-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sales_user -d sales_db"]
       interval: 10s
@@ -22,7 +24,9 @@ services:
     image: redis:7-alpine
     container_name: sales-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
+    networks:
+      - sales-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -38,7 +42,11 @@ services:
       SPRING_PROFILE: dev
       DB_HOST: postgres
       REDIS_HOST: redis
+      DB_HOST_PORT: 5434
+      REDIS_HOST_PORT: 6380
       JWT_SECRET: ${JWT_SECRET:-my-super-secret-key-change-in-production-at-least-256-bits}
+    networks:
+      - sales-net
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,6 +54,10 @@ services:
         condition: service_healthy
     env_file:
       - .env
+
+networks:
+  sales-net:
+    driver: bridge
 
 volumes:
   postgres_data:

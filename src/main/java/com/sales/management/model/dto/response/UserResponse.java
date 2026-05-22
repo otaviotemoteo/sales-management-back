@@ -18,5 +18,11 @@ public class UserResponse {
     private String email;
     private UserRole role;
     private Boolean active;
+    private String phone;
+    private String cpf;
+    private String city;
+    private String state;
+    private String bio;
+    private String avatarUrl;
     private LocalDateTime createdAt;
 }

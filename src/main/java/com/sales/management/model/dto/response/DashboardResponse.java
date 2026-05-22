@@ -32,6 +32,7 @@ public class DashboardResponse {
         private String productName;
         private Long quantity;
         private BigDecimal revenue;
+        private BigDecimal growth;
     }
     
     @Data
