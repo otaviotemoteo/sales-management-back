@@ -4,6 +4,7 @@ import com.sales.management.exception.BadRequestException;
 import com.sales.management.exception.ResourceNotFoundException;
 import com.sales.management.model.dto.request.ChangePasswordRequest;
 import com.sales.management.model.dto.request.CreateUserRequest;
+import com.sales.management.model.dto.request.SetPasswordRequest;
 import com.sales.management.model.dto.request.UpdateUserRequest;
 import com.sales.management.model.dto.response.SellerStatsResponse;
 import com.sales.management.model.dto.response.UserResponse;
@@ -37,10 +38,13 @@ public class UserService {
             throw new BadRequestException(Constants.EMAIL_ALREADY_EXISTS);
         }
 
+        String rawPassword = request.getPassword();
+        boolean hasPassword = rawPassword != null && !rawPassword.isBlank();
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(hasPassword ? passwordEncoder.encode(rawPassword) : null)
                 .role(request.getRole())
                 .active(true)
                 .build();
@@ -165,6 +169,15 @@ public class UserService {
         userRepository.save(currentUser);
     }
 
+    @Transactional
+    public void setOwnPassword(User currentUser, SetPasswordRequest request) {
+        if (currentUser.getPassword() != null) {
+            throw new BadRequestException("Senha já definida. Use a opção de alterar senha.");
+        }
+        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+    }
+
     @Cacheable(value = "sellerStats", key = "#sellerId + '_' + #startDate + '_' + #endDate")
     public SellerStatsResponse getSellerStats(Long sellerId, LocalDateTime startDate, LocalDateTime endDate) {
         User user = userRepository.findById(sellerId)
@@ -188,6 +201,7 @@ public class UserService {
                 .state(user.getState())
                 .bio(user.getBio())
                 .avatarUrl(user.getAvatarUrl())
+                .mustSetPassword(user.getPassword() == null)
                 .createdAt(user.getCreatedAt())
                 .build();
     }
