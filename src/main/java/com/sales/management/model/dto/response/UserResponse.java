@@ -24,5 +24,6 @@ public class UserResponse {
     private String state;
     private String bio;
     private String avatarUrl;
+    private Boolean mustSetPassword;
     private LocalDateTime createdAt;
 }
